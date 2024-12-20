@@ -27,7 +27,7 @@ from jiwer import AlignmentChunk
 from jiwer import cer
 from collections import namedtuple
 from tabulate import tabulate
-from utils import is_arabic
+from utils import *
 
 @click.command()
 @click.option(
@@ -269,8 +269,6 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
                 insertions[hyp_lang] += 1
             
 
-    
-
     # Calculate WER for Arabic and English
     arabic_total_errors = sum(arabic_errors.values())
     english_total_errors = sum(english_errors.values())
@@ -297,40 +295,33 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
         ["WER", f"{english_wer:.2f}%"],
     ]
     
-    # Print tables
-    print("### Arabic ###")
-    print(tabulate(arabic_data, headers=["Metric", "Value"], tablefmt="pretty"))
+    display_metrics_table(arabic_data, "Arabic")
+    display_metrics_table(english_data, "English")
     
-    print("\n### English ###")
-    print(tabulate(english_data, headers=["Metric", "Value"], tablefmt="pretty"))
-    print()
-    # Substitutions Table
-    print("### Substitutions Table ###")
+    # Substitutions
     total_subs = sum(substitutions.values())
     subs_data = [
         [key.replace('_', ' to '), f"{(count / total_subs) * 100:.2f}%" if total_subs > 0 else "0.00%"]
         for key, count in substitutions.items()
     ]
-    print(tabulate(subs_data, headers=["Type", "Percentage"], tablefmt="pretty"))
+    display_metrics_table(subs_data, "Substitutions Table", headers=["Type", "Percentage"])
     
-    # Deletions Table
-    print("\n### Deletions Table ###")
+    # Deletions 
     total_dels = sum(deletions.values())
     dels_data = [
         [f"{key} deletions", f"{(count / total_dels) * 100:.2f}%" if total_dels > 0 else "0.00%"]
         for key, count in deletions.items()
     ]
-    print(tabulate(dels_data, headers=["Type", "Percentage"], tablefmt="pretty"))
+    display_metrics_table(dels_data, "Deletions Table", headers=["Type", "Percentage"])
     
-    # Insertions Table
-    print("\n### Insertions Table ###")
+    # Insertions
     total_ins = sum(insertions.values())
     ins_data = [
         [f"{key} insertions", f"{(count / total_ins) * 100:.2f}%" if total_ins > 0 else "0.00%"]
         for key, count in insertions.items()
     ]
-    print(tabulate(ins_data, headers=["Type", "Percentage"], tablefmt="pretty"))
-
+    display_metrics_table(ins_data, "Insertions Table", headers=["Type", "Percentage"])
+    
     return arabic_wer, english_wer, arabic_cer, english_cer
 
 
@@ -350,9 +341,7 @@ def show_per_lang_measures(word_output):
         ["Substitutions", word_output.substitutions],
     ]
     
-    print("### Overall Metrics ###")
-    print(tabulate(overall_metrics, headers=["Metric", "Value"], tablefmt="pretty"))
-    print()
+    display_metrics_table(overall_metrics, "Overall Metrics")
     aligned_refs, aligned_hyps = align_word_output(word_output)
     calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
 
