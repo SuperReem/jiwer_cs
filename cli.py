@@ -71,12 +71,21 @@ from utils import is_arabic
     help="Apply a global minimal alignment between reference and hypothesis sentences "
     "before computing the WER.",
 )
+@click.option(
+    "--codeswitching",
+    "-s",
+    "code_switching",
+    is_flag=True,
+    default=False,
+    help="Print per-language measures for code-switched text",
+)
 def cli(
     reference_file: pathlib.Path,
     hypothesis_file: pathlib.Path,
     compute_cer: bool,
     show_alignment: bool,
     global_alignment: bool,
+    code_switching: bool,
 ):
     """
     JiWER is a python tool for computing the word-error-rate of ASR systems. To use
@@ -137,14 +146,15 @@ def cli(
 
     if show_alignment:
         print(jiwer.visualize_alignment(out, show_measures=True), end="")
-        align(out)
+
     else:
         if compute_cer:
             print(out.cer)
         else:
             print(out.wer)
-
-
+            
+    if code_switching:
+        show_per_lang_measures(out)
 
 
 def align_word_output(word_output):
@@ -191,7 +201,7 @@ def align_word_output(word_output):
 
     return aligned_references, aligned_hypotheses
 
-def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hyps):
+def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps):
     # Error counters for WER
     arabic_errors = {"sub": 0, "del": 0, "ins": 0}
     english_errors = {"sub": 0, "del": 0, "ins": 0}
@@ -324,7 +334,7 @@ def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hy
     return arabic_wer, english_wer, arabic_cer, english_cer
 
 
-def align(word_output):
+def show_per_lang_measures(word_output):
 
     references = [" ".join(sen) for sen in word_output.references]
     hypotheses = [" ".join(sen) for sen in word_output.hypotheses]
@@ -344,7 +354,7 @@ def align(word_output):
     print(tabulate(overall_metrics, headers=["Metric", "Value"], tablefmt="pretty"))
     print()
     aligned_refs, aligned_hyps = align_word_output(word_output)
-    calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hyps)
+    calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
 
 
 if __name__ == "__main__":
