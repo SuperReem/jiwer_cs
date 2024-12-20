@@ -22,13 +22,12 @@ Provide a simple CLI wrapper for JiWER. The CLI does not support custom transfor
 
 import click
 import pathlib
-import pdb
 import jiwer
 from jiwer import AlignmentChunk
-from collections import namedtuple
-import re
 from jiwer import cer
+from collections import namedtuple
 from tabulate import tabulate
+from utils import is_arabic
 
 @click.command()
 @click.option(
@@ -191,11 +190,6 @@ def align_word_output(word_output):
         aligned_hypotheses.append(aligned_hyp)
 
     return aligned_references, aligned_hypotheses
-
-# Function to detect if a word is Arabic
-def is_arabic(word):
-    return re.search(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+', word)
-
 
 def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hyps):
     # Error counters for WER
