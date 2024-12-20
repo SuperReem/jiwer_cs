@@ -322,7 +322,7 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
     ]
     display_metrics_table(ins_data, "Insertions Table", headers=["Type", "Percentage"])
     
-    return arabic_wer, english_wer, arabic_cer, english_cer
+    return arabic_wer, english_wer
 
 
 def show_per_lang_measures(word_output):
