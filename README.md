@@ -1,6 +1,6 @@
 # JiWER-CS
 
-A modified version of the original JiWER library that provides per-language measures for code-switching (currently supporting Arabic-English).
+A modified version of the original <a href="https://github.com/jitsi/jiwer">JiWER</a> library that provides per-language measures for code-switching (currently supporting Arabic-English).
 
 ## Usage:
 python cli.py -r ref.txt -h hyp.txt -a
