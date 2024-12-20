@@ -23,10 +23,7 @@ Provide a simple CLI wrapper for JiWER. The CLI does not support custom transfor
 import click
 import pathlib
 import jiwer
-from jiwer import AlignmentChunk
 from jiwer import cer
-from collections import namedtuple
-from tabulate import tabulate
 from utils import *
 
 @click.command()
