@@ -24,7 +24,11 @@ import click
 import pathlib
 import pdb
 import jiwer
-
+from jiwer import AlignmentChunk
+from collections import namedtuple
+import re
+from jiwer import cer
+from tabulate import tabulate
 
 @click.command()
 @click.option(
@@ -133,8 +137,7 @@ def cli(
             out = jiwer.process_words(reference_sentences, hypothesis_sentences)
 
     if show_alignment:
-        #print(jiwer.visualize_alignment(out, show_measures=True), end="")
-        #print("out: ",out)
+        print(jiwer.visualize_alignment(out, show_measures=True), end="")
         align(out)
     else:
         if compute_cer:
@@ -143,9 +146,6 @@ def cli(
             print(out.wer)
 
 
-
-from jiwer import AlignmentChunk
-from collections import namedtuple
 
 
 def align_word_output(word_output):
@@ -192,14 +192,10 @@ def align_word_output(word_output):
 
     return aligned_references, aligned_hypotheses
 
-import re
-
 # Function to detect if a word is Arabic
 def is_arabic(word):
     return re.search(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+', word)
 
-from jiwer import cer
-from tabulate import tabulate
 
 def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hyps):
     # Error counters for WER
@@ -233,13 +229,11 @@ def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hy
                 if is_arabic(ref_word):
                     arabic_total_ref += 1
                     arabic_refs.append(ref_word)
-                    arabic_hyps.append(hyp_word)
-                    #arabic_hyps.append(hyp_word if hyp_status != "insert" else "")
+                    arabic_hyps.append(hyp_word if hyp_status != "insert" else "")
                 else:
                     english_total_ref += 1
                     english_refs.append(ref_word)
-                    english_hyps.append(hyp_word)
-                    #english_hyps.append(hyp_word if hyp_status != "insert" else "")
+                    english_hyps.append(hyp_word if hyp_status != "insert" else "")
     
 
             # Process errors
@@ -269,15 +263,6 @@ def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hy
                 hyp_lang = "ar" if is_arabic(hyp_word) else "en"
                 ref_lang = "ar" if is_arabic(ref_word) else "en"
                 insertions[hyp_lang] += 1
-                
-                if hyp_lang == "ar":
-                    arabic_errors["ins"] += 1
-                else:
-                    english_errors["ins"] += 1
-                if hyp_lang == "ar":
-                    arabic_hyps.append(hyp_word)
-                else:
-                    english_hyps.append(hyp_word) 
             
 
     
@@ -290,6 +275,8 @@ def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hy
     english_wer = (english_total_errors / english_total_ref) * 100 if english_total_ref > 0 else 0
 
     # Calculate CER for Arabic and English
+    arabic_refs = [x for x in arabic_refs if x != "placeholder"]
+    english_refs = [x for x in english_refs if x != "placeholder"]
     arabic_cer = cer(" ".join(arabic_refs), " ".join(arabic_hyps)) * 100 if arabic_refs else 0
     english_cer = cer(" ".join(english_refs), " ".join(english_hyps)) * 100 if english_refs else 0
 
@@ -298,14 +285,12 @@ def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hy
         ["Errors", arabic_errors],
         ["Total Reference Words", arabic_total_ref],
         ["WER", f"{arabic_wer:.2f}%"],
-        ["CER", f"{arabic_cer:.2f}%"]
     ]
     
     english_data = [
         ["Errors", english_errors],
         ["Total Reference Words", english_total_ref],
-        ["WER", f"{english_wer*100:.2f}%"],
-        ["CER", f"{english_cer*100:.2f}%"]
+        ["WER", f"{english_wer:.2f}%"],
     ]
     
     # Print tables
@@ -346,10 +331,10 @@ def calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hy
 
 
 def align(word_output):
-    # Process WordOutput
+
     references = [" ".join(sen) for sen in word_output.references]
     hypotheses = [" ".join(sen) for sen in word_output.hypotheses]
-    #print("hypotheses: ", hypotheses)
+
     # Overall Metrics Table
     wer = word_output.wer * 100
     cer = jiwer.cer(references, hypotheses) * 100
@@ -365,12 +350,6 @@ def align(word_output):
     print(tabulate(overall_metrics, headers=["Metric", "Value"], tablefmt="pretty"))
     print()
     aligned_refs, aligned_hyps = align_word_output(word_output)
-    
-    # Print results
-    #for ref, hyp in zip(aligned_refs, aligned_hyps):
-       #print("Aligned Reference:", ref)
-       #print("Aligned Hypothesis:", hyp)
-       #print()
     calculate_language_wer_and_cer_with_detailed_tables(aligned_refs, aligned_hyps)
 
 
