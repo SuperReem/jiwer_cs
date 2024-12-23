@@ -3,7 +3,7 @@
 A modified version of the original <a href="https://github.com/jitsi/jiwer">JiWER</a> library that provides per-language measures for code-switching (currently supporting Arabic-English).
 
 ## Usage:
-python cli.py -r ref.txt -h hyp.txt -a
+python cli.py -r ref.txt -h hyp.txt -s
 
 **Format for ref.txt and hyp.txt:** Each reference/hypothesis sentence should be on a new line
 
