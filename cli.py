@@ -295,11 +295,11 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
                 insertions[hyp_lang] += 1
             
 
-    # Calculate WER for Arabic and English
+    # Sum Errors for WER
     arabic_total_errors = sum(arabic_errors.values())
     english_total_errors = sum(english_errors.values())
 
-    # Calculate CER for Arabic and English
+    # Sum Errors for CER
     arabic_total_char_errors = sum(arabic_char_errors.values())
     english_total_char_errors = sum(english_char_errors.values())
 
@@ -311,7 +311,6 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
     arabic_cer = (arabic_total_char_errors / arabic_total_ch_ref) * 100 if arabic_total_ch_ref > 0 else 0
     english_cer = (english_total_char_errors / english_total_ch_ref) * 100 if english_total_ch_ref > 0 else 0
     
-    # Calculate CER for Arabic and English
     arabic_refs = [x for x in arabic_refs if x != "placeholder"]
     english_refs = [x for x in english_refs if x != "placeholder"]
     arabic_hyps = [x for x in arabic_hyps if x != "placeholder"]
