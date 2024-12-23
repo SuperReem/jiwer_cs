@@ -23,7 +23,6 @@ Provide a simple CLI wrapper for JiWER. The CLI does not support custom transfor
 import click
 import pathlib
 import jiwer
-from jiwer import cer
 from utils import *
 
 @click.command()
@@ -202,7 +201,10 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
     # Error counters for WER
     arabic_errors = {"sub": 0, "del": 0, "ins": 0}
     english_errors = {"sub": 0, "del": 0, "ins": 0}
-    
+
+    #CER
+    arabic_char_errors = {"sub": 0, "del": 0, "ins": 0}
+    english_char_errors = {"sub": 0, "del": 0, "ins": 0}
     # Substitution breakdown
     substitutions = {"ar_ar": 0, "ar_en": 0, "en_en": 0, "en_ar": 0}
     
@@ -213,6 +215,9 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
     arabic_total_ref = 0
     english_total_ref = 0
 
+    arabic_total_ch_ref = 0
+    english_total_ch_ref = 0
+    
     # Reference and hypothesis strings for CER
     arabic_refs = []
     arabic_hyps = []
@@ -229,10 +234,12 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
             if ref_word != "placeholder":  # Skip placeholders used for alignment
                 if is_arabic(ref_word):
                     arabic_total_ref += 1
+                    arabic_total_ch_ref += len(ref_word)
                     arabic_refs.append(ref_word)
                     arabic_hyps.append(hyp_word if hyp_status != "insert" else "")
                 else:
                     english_total_ref += 1
+                    english_total_ch_ref += len(ref_word)
                     english_refs.append(ref_word)
                     english_hyps.append(hyp_word if hyp_status != "insert" else "")
     
@@ -250,14 +257,36 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
                 
                 # Track detailed substitution breakdown
                 substitutions[f"{ref_lang}_{hyp_lang}"] += 1
+            
+                max_len = max(len(ref_word), len(hyp_word))
+                for i in range(max_len):
+                    r_char = ref_word[i] if i < len(ref_word) else ""
+                    h_char = hyp_word[i] if i < len(hyp_word) else ""
+                    if r_char != h_char:  # Count only incorrect characters
+                        if ref_lang == "ar":
+                          if r_char == "":  # Insertion
+                                arabic_char_errors["ins"] += 1
+                          elif h_char == "":  # Deletion
+                                arabic_char_errors["del"] += 1
+                          else:  # Substitution
+                                arabic_char_errors["sub"] += 1
+                        else:
+                          if r_char == "":  # Insertion
+                                english_char_errors["ins"] += 1
+                          elif h_char == "":  # Deletion
+                                english_char_errors["del"] += 1
+                          else:  # Substitution
+                                english_char_errors["sub"] += 1
 
             elif ref_status == "delete":
                 ref_lang = "ar" if is_arabic(ref_word) else "en"
                 deletions[ref_lang] += 1
                 if ref_lang == "ar":
                     arabic_errors["del"] += 1
+                    arabic_char_errors["del"] += len(ref_word)
                 else:
                     english_errors["del"] += 1
+                    english_char_errors["del"] += len(ref_word)
 
             elif hyp_status == "insert":
 
@@ -270,26 +299,37 @@ def calculate_language_measures_with_detailed_tables(aligned_refs, aligned_hyps)
     arabic_total_errors = sum(arabic_errors.values())
     english_total_errors = sum(english_errors.values())
 
+    # Calculate CER for Arabic and English
+    arabic_total_char_errors = sum(arabic_char_errors.values())
+    english_total_char_errors = sum(english_char_errors.values())
+
+    #WER
     arabic_wer = (arabic_total_errors / arabic_total_ref) * 100 if arabic_total_ref > 0 else 0
     english_wer = (english_total_errors / english_total_ref) * 100 if english_total_ref > 0 else 0
 
+    #CER
+    arabic_cer = (arabic_total_char_errors / arabic_total_ch_ref) * 100 if arabic_total_ch_ref > 0 else 0
+    english_cer = (english_total_char_errors / english_total_ch_ref) * 100 if english_total_ch_ref > 0 else 0
+    
     # Calculate CER for Arabic and English
     arabic_refs = [x for x in arabic_refs if x != "placeholder"]
     english_refs = [x for x in english_refs if x != "placeholder"]
-    arabic_cer = cer(" ".join(arabic_refs), " ".join(arabic_hyps)) * 100 if arabic_refs else 0
-    english_cer = cer(" ".join(english_refs), " ".join(english_hyps)) * 100 if english_refs else 0
+    arabic_hyps = [x for x in arabic_hyps if x != "placeholder"]
+    english_hyps = [x for x in english_hyps if x != "placeholder"]
 
     # Data for tables
     arabic_data = [
         ["Errors", arabic_errors],
         ["Total Reference Words", arabic_total_ref],
         ["WER", f"{arabic_wer:.2f}%"],
+        ["CER", f"{arabic_cer:.2f}%"]
     ]
     
     english_data = [
         ["Errors", english_errors],
         ["Total Reference Words", english_total_ref],
         ["WER", f"{english_wer:.2f}%"],
+        ["CER", f"{english_cer:.2f}%"]
     ]
     
     display_metrics_table(arabic_data, "Arabic")
